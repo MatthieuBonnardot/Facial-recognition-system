@@ -1,9 +1,7 @@
 const video = document.getElementById("video");
 
-const recognition = async () => {
-  const labels = [
-    "Matthieu",
-  ];
+const LoadLabeledImages = async () => {
+  const labels = ["Matthieu"];
   return Promise.all(
     labels.map(async (label) => {
       const descriptions = [];
@@ -23,6 +21,18 @@ const recognition = async () => {
   );
 };
 
+const recognition = async (detections) => {
+    const labeledFaceDescriptors = await loadLabeledImages()
+    const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6)
+    const resizedDetections = faceapi.resizeResults(detections, displaySize)
+    const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor))
+    results.forEach((result, i) => {
+      const box = resizedDetections[i].detection.box
+      const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() })
+      drawBox.draw(canvas)
+    })
+};
+
 const detection = async () => {
   video.addEventListener("playing", () => {
     const canvas = faceapi.createCanvasFromMedia(video);
@@ -39,6 +49,7 @@ const detection = async () => {
       faceapi.draw.drawDetections(canvas, resizedDetections);
       faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
       faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+      recognition(detections);
     }, 100);
   });
 };
